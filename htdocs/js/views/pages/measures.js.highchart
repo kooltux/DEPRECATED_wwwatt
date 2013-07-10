@@ -1,0 +1,264 @@
+var DEBUG=true;
+
+define([
+	'app',
+	'config',
+	'underscore',
+	'socketio',
+	'highstock'
+],function(App,Config,_,io) {
+	return can.Control.extend({
+		init: function(el,options) {
+			// init chart
+			this.initChart();
+
+			// init websocket
+			this.frequency=1; // HZ
+			this.ioconnect();
+		},
+		destroy: function() {
+			this.iodisconnect();
+		},
+
+		// events
+		'.btnplay click': function() {
+			this.playpauseToggle();
+		},
+
+		'.setfreq click': function(ev) {
+			ev.preventDefault();
+
+			// retrieve value in link
+			var value=$(ev.currentTarget).attr("value");
+
+			$(ev.currentTarget).parent().parent().children().removeClass("active");
+			$(ev.currentTarget).parent().addClass("active");
+
+			this.setFrequency(value);
+		},
+
+		// -------------------------- charting ----------------------------
+		initChart: function() {
+			// loading page
+			var chartdiv=this.element.find('#chart');
+
+			$('<div/>').addClass('loading-page').appendTo(chartdiv);
+
+			// Create the chart
+			Highcharts.setOptions({
+				global : {
+					useUTC : false
+				}
+			});
+			chartdiv.highcharts('StockChart', {
+				chart: {
+					events : {
+						load : function() {
+							// set up the updating of the chart each second
+							var series = this.series[0];
+							setInterval(function() {
+								var x = (new Date()).getTime(), // current time
+								y = Math.round(Math.random() * 100);
+								series.addPoint([x, y], true, true);
+							}, 1000);
+						}
+					}
+				},
+				rangeSelector: {
+					buttons: [
+						{
+							count: 2,
+							type: 'second',
+							text: '2s'
+						}, 
+						{
+							count: 20,
+							type: 'second',
+							text: '20s'
+						}, 
+						{
+							count: 1,
+							type: 'minute',
+							text: '1M'
+						}, 
+						{
+							count: 5,
+							type: 'minute',
+							text: '5M'
+						},
+						{
+							type: 'all',
+							text: 'All'
+						}
+					],
+					inputEnabled: false,
+					selected: 0
+				},
+				title : {
+					text : 'Power measurement'
+				},
+
+				series : [{
+					name : 'Power',
+					data : (function() {
+						// generate an array of random data
+						var data = [], time = (new Date()).getTime(), i;
+
+						for( i = -2; i <= 0; i++) {
+							data.push([
+								time + i * 1000,
+								0
+							]);
+						}
+						return data;
+					})(),
+					tooltip: {
+						valueDecimals: 3
+					}
+				}]
+			});
+		},
+
+		/* --------------------- controls --------------------------- */
+
+		playPauseAdjust: function() {
+			// remove classes
+			var btn=$('.btnplay');
+			btn.removeClass("btn-success btn-warning");
+
+			if (this.iosubscribed) {
+				$('.btnplay').html('<i class="icon-pause"></i> Pause').addClass("btn-warning");
+			}
+			else {
+				$('.btnplay').html('<i class="icon-play"></i> Play').addClass("btn-success");
+			}
+		},
+
+		setFrequency: function(freq) {
+			DEBUG && console.log("New frequency: "+freq);
+			this.frequency=freq;
+
+			// resubscribe
+			if (this.iosubscribed)
+				this.IOsubscribe();
+		},
+
+		setState: function(state) {
+			var btn=$('#sockio_state');
+
+			// first remove all classes
+			btn.removeClass("label-success label-warning label-important label-info label-inverse");
+
+			var label,klass;
+			switch(state) {
+				case 'connected':
+					label="Connected";
+					klass="label-success";
+					break;
+				case 'disconnected':
+				default:
+					label="Disconnected";
+					klass="label-important";
+					break;
+			}
+
+			DEBUG && console.log("show state: "+label);
+
+			btn.html(label).addClass(klass);
+		},
+
+		/* --------------------- socket.io -------------------------- */
+
+		ioconnect: function() {
+			if (this.iosocket) return; // already connected
+			var self=this;
+
+			this.iosubscribed=false;
+
+			var s=this.iosocket=io.connect('/');
+
+			DEBUG && console.log("SOCKIO - Connecting");
+
+			// base handlers
+			s.on('connect',function() {
+				DEBUG && console.log("SOCKIO - Connected");
+				s.send("Client connected");
+				self.setState("connected");
+			});
+
+			s.on('error',function(err) {
+				DEBUG && console.log("SOCKIO - Error",err);
+			});
+
+			s.on('disconnect',function() {
+				DEBUG && console.log("SOCKIO - Disconnected");
+				self.setState("disconnected");
+				delete self.iosocket;
+				io.sockets={}; // hack to remote socket from cache
+			});
+
+			s.on('reconnect',function() {
+				DEBUG && console.log("SOCKIO - Reconnected");
+				self.setState("connected");
+			});
+
+			s.on('message',function(data) {
+				DEBUG && console.log("SOCKIO - Message",data);
+			});
+
+			// subscribe/unsubscribe
+			s.on('failure',function(data) {
+				DEBUG && console.log("SOCKIO - failure",data);
+			});
+			s.on('subscribed',function(service,frequency) {
+				DEBUG && console.log("SOCKIO - Subscribed to "+service+" at "+frequency+" Hz");
+				self.iosubscribed=true;
+				self.playpauseAdjust();
+			});
+			s.on('unsubscribed',function(service) {
+				DEBUG && console.log("SOCKIO - unsubscribed to "+service);
+				self.iosubscribed=false;
+				self.playpauseAdjust();
+			});
+
+			s.on('measures',function(data) {
+				//DEBUG && console.log("SOCKIO - measures",data);
+
+				// decode json
+				try {
+					data=JSON.parse(data);
+				}
+				catch(e) {
+					DEBUG && console.log("Measures format error: "+e);
+					return;
+				}
+
+				self.updateMeasures(data);
+
+				$("#sockio_data").addClass("badge-warning");
+				var blinktime=500/self.frequency;
+				if (blinktime>300) blinktime=300;
+
+				setTimeout(function() { $("#sockio_data").removeClass("badge-warning"); },blinktime);
+			});
+		},
+		
+		iodisconnect: function() {
+			DEBUG && console.log("SOCKIO - Closing");
+			if (this.iosocket)
+				this.iosocket.disconnect();
+		},
+			
+		subscribe: function() {
+			if (!this.iosocket) throw new Error("Not connected");
+			this.playpauseAdjust();
+			this.iosocket.emit('subscribe', this.frequency /*Hz*/);
+		},
+
+		unsubscribe: function() {
+			this.playpauseAdjust();
+			this.iosocket.emit('unsubscribe');
+		}
+	});
+});
+

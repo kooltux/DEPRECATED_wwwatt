@@ -1,0 +1,109 @@
+<style>
+svg {
+  font: 10px sans-serif;
+  border: 1px solid steelblue;
+  background-color: #fdfdff;
+}
+
+.data-area {
+  stroke: none;
+}
+
+.small-area {
+  stroke: none;
+}
+
+.axis path {
+  fill: none;
+  shape-rendering: crispEdges;
+}
+.axis line {
+  fill: none;
+  opacity: .30;
+  stroke-dasharray: 1,1;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+	stroke: none;
+}
+
+.data-line1 {
+  fill: none;
+  stroke-width: 2;
+}
+
+.data-line2 , .data-line3 {
+  fill: none;
+  stroke-width: 2;
+  opacity: .30;
+}
+
+.brush .extent {
+  stroke: #888;
+  fill: #ffd000;
+  fill-opacity: .3;
+  shape-rendering: crispEdges;
+}
+
+.legend {
+	font-size: 1.2em;
+}
+
+</style>
+<div id="measures" class="container-fluid">
+	<div class="well">
+		<div class="row-fluid">
+			<div class="btn-group">
+				<button class="btn dropdown-toggle" data-toggle="dropdown">
+					<span id="sethist-label">History ...</span>
+					<b class="caret"></b>
+				</button>
+				<ul class="dropdown-menu">
+					<li class="nav-header">History duration</li>
+					<li><a class="sethist" value="30" href="#">30 s</a></li>
+					<li><a class="sethist" value="60" href="#">1 mn</a></li>
+					<li><a class="sethist" value="180" href="#">3 mn</a></li>
+					<li><a class="sethist" value="300" href="#">5 mn</a></li>
+					<li><a class="sethist" value="600" href="#">10 mn</a></li>
+					<li><a class="sethist" value="1800" href="#">30 mn</a></li>
+					<li class="active"><a class="sethist" value="3600" href="#">1 h</a></li>
+					<li><a class="sethist" value="7200" href="#">2 h</a></li>
+					<li><a class="sethist" value="14400" href="#">4 h</a></li>
+					<li><a class="sethist" value="21600" href="#">6 h</a></li>
+					<li><a class="sethist" value="28800" href="#">8 h</a></li>
+					<li><a class="sethist" value="43200" href="#">12 h</a></li>
+				</ul>
+			</diV>
+			<div class="btn-group">
+				<button class="btn dropdown-toggle" data-toggle="dropdown">
+					<span id="setfreq-label">Frequency ...</span>
+					<b class="caret"></b>
+				</button>
+				<ul class="dropdown-menu">
+					<li class="nav-header">Display frequency</li>
+					<li><a class="setfreq" value="0.1" href="#">0.1 Hz</a></li>
+					<li><a class="setfreq" value="0.2" href="#">0.2 Hz</a></li>
+					<li><a class="setfreq" value="0.5" href="#">0.5 Hz</a></li>
+					<li class="active"><a class="setfreq" value="1" href="#">1 Hz</a></li>
+					<li><a class="setfreq" value="2" href="#">2 Hz</a></li>
+					<li><a class="setfreq" value="5" href="#">5 Hz</a></li>
+				</ul>
+			</div>
+
+			<div class="btn-group">
+				<button class="btn btnplay"></button>
+			</div>
+
+			<div class="pull-right">
+				<span id="sockio_data" class="badge">&nbsp;</span>
+				<span id="sockio_state" class="label large label-warning">Initializing</span>
+			</div>
+		</div>
+	</div>
+
+	<div class="well">
+		<div id="chart" class="row-fluid">
+		</div>
+	</div>
+</div>

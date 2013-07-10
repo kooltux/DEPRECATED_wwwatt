@@ -1,0 +1,14 @@
+{
+  "name": "wwwatt",
+  "description": "Yoctopuce Wattmeter Interface",
+  "author": "Stephane Desneux <sdx@kooltux.org>",
+  "version": "0.0.1",
+  "main":"server.js",
+  "dependencies": {
+    "node-yoctopuce": "~0.0.3",
+	 "express": ">=3.1",
+	 "underscore": "*",
+	 "winston":"*",
+	 "socket.io":"*"
+  }
+}

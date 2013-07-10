@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<title>WWWatt !</title>
+  	<meta name="description" content="Interface to Yoctopuce Wattmeter">
+	<meta name="author" content="Stephane Desneux <sdx@kooltux.org>">
+
+	<!-- Mobile Specific Metas -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <!-- styles -->
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		body {
+			padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+			padding-bottom: 40px;
+		}
+	</style>
+	<link href="css/bootstrap-responsive.min.css" rel="stylesheet">
+	<link href="css/site.css" rel="stylesheet">
+
+    <!-- fav and touch icons -->
+	<link rel="shortcut icon" href="ico/favicon.ico">
+    <!--
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="ico/icon_144.png">
+	<link rel="apple-touch-icon-precomposed" sizes="114x114" href="ico/icon_114.png">
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="ico/icon_72.png">
+	<link rel="apple-touch-icon-precomposed" href="ico/icon_57.png">
+	-->
+</head>
+<body>
+	<header id="menu" class="navbar navbar-inverse navbar-fixed-top">
+		<div class="navbar-inner">
+			<div class="container-fluid">
+				<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</a>
+				<a class="brand" href="#">WWWatt !</a>
+				<div class="nav-collapse collapse">
+					<ul class="nav">
+						<li><a href="#">Home</a></li>
+						<li><a href="#measures">Measures</a></li>
+						<li><a href="#config">Configuration</a></li>
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Help<b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="#about">About</a></li>
+								<li><a href="#help">Help</a></li>
+
+								<li class="divider"></li>
+								<li class="nav-header">Client-side</li>
+								<li><a href="http://jquery.com" target="_blank">jQuery</a></li>
+								<li><a href="http://underscorejs.org" target="_blank">Underscore</a></li>
+								<li><a href="https://github.com/epeli/underscore.string" target="_blank">Underscore.string</a></li>
+								<li><a href="http://requirejs.org" target="_blank">RequireJS</a></li>
+								<li><a href="http://canjs.us" target="_blank">CanJS</a></li>
+								<li><a href="http://twitter.github.com/bootstrap" target="_blank">Bootstrap</a></li>
+								<li><a href="http://www.highcharts.com/products/highstock" target="_blank">HighStock</a></li>
+
+								<li class="divider"></li>
+								<li class="nav-header">Server-side</li>
+								<li><a href="http://nodejs.org/api/all.html" target="_blank">NodeJS</a></li>
+								<li><a href="http://socket.io" target="_blank">Socket.io</a></li>
+								<li><a href="https://github.com/schlafsack/node-yoctopuce" target="_blank">node-yoctopuce</a></li>
+
+								<li class="divider"></li>
+								<li class="nav-header">Hardware</li>
+								<li><a href="http://www.yoctopuce.com/EN/products/usb-sensors/yocto-watt" target="_blank">YoctoWatt</a></li>
+
+								<li class="divider"></li>
+								<li class="nav-header">Perspectives</li>
+								<li><a href="http://techslides.com/50-javascript-charting-and-graphics-libraries/" target="_blank">JS Chart libs comparison</a></li>
+								<li><a href="http://mbostock.github.com/d3/" target="_blank">D3</a></li>
+								<li><a href="http://code.shutterstock.com/rickshaw/" target="_blank">Rickshaw</a></li>
+								<li><a href="https://github.com/kenhub/giraffe" target="_blank">Giraffe</a></li>
+								<li><a href="http://www.jqplot.com/tests/line-charts.php" target="_blank">jqPlot</a></li>
+								<li><a href="http://dygraphs.com/" target="_blank">dygraphs</a></li>
+								<li><a href="http://humblesoftware.com/flotr2/documentation" target="_blank">Flotr2</a></li>
+								<li><a href="http://nvd3.org/ghpages/cumulativeLine.html" target="_blank">NVD3</a></li>
+
+
+							</ul>
+						</li>
+					</ul>
+					<!--
+					<div class="pull-right">
+						<a href="#" class="btn login">Log in</a>
+						<a href="#" class="btn btn-primary signup">Sign up</a>
+					</div>
+					-->
+				</div>
+			</div>
+		</div>
+	</header>
+		
+	<div class="container-fluid">
+		<div id="pages" class="row-fluid"></div>
+		<hr>
+		<footer>
+			<p class="muted"><small>WWWatt !</small></p>
+		</footer>
+	</div>
+
+	<script src="lib/require-2.1.6.js" data-main="js/main"></script>
+
+</body>
+</html>
