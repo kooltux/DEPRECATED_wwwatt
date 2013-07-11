@@ -239,22 +239,36 @@ define([
 			}
 
 			var focus = svg.append("g")
-				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+			;
+
+			var graph=focus.append("g")
+				.on("mousemove",function() {
+					console.log("move ",d3.mouse(this));
+					// TODO: adjust legend
+				})
+				.on("mouseout",function() {
+					console.log("out ",d3.mouse(this));
+					// TODO: adjust legend
+				})
+			;
+
+			graph.append("rect")
+				.attr("width",width)
+				.attr("height",height)
+				.style("fill","#eee")
+			;
 
 			// data 1
-			focus.append("path")
+			graph.append("path")
 				.data([svgdata])
 				.attr("class","data-area")
 				.style("fill",labels[ydata1].lightcolor)
 				.attr("clip-path", "url(#clip)")
 				.attr("d", area)
-				.on("mousemove",function(ev) {
-					d3.event(ev);
-					console.log("move ",d3.mouse(focus));
-				})
 			;
 
-			focus.append("path")
+			graph.append("path")
 				.data([svgdata])
 				.attr("class","data-line1")
 				.style("stroke",labels[ydata1].color)
@@ -283,7 +297,7 @@ define([
 			;
 
 			// data 2
-			focus.append("path")
+			graph.append("path")
 				.data([svgdata])
 				.attr("class","data-line2")
 				.style("stroke",labels[ydata2].color)
@@ -299,7 +313,7 @@ define([
 			;
 
 			// data 3
-			focus.append("path")
+			graph.append("path")
 				.data([svgdata])
 				.attr("class","data-line3")
 				.style("stroke",labels[ydata3].color)
