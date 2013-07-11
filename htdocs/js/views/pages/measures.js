@@ -247,7 +247,12 @@ define([
 				.attr("class","data-area")
 				.style("fill",labels[ydata1].lightcolor)
 				.attr("clip-path", "url(#clip)")
-				.attr("d", area);
+				.attr("d", area)
+				.on("mousemove",function(ev) {
+					d3.event(ev);
+					console.log("move ",d3.mouse(focus));
+				})
+			;
 
 			focus.append("path")
 				.data([svgdata])
