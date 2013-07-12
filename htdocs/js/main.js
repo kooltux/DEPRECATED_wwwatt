@@ -5,8 +5,8 @@ var baseUrl = src.substring(src.indexOf(document.location.pathname), src.lastInd
 */
 
 // Require.js allows us to configure shortcut alias
-//var libUrl="/lib/"; // production mode
-var libUrl="/libdbg/"; // development mode
+var libUrl="/lib/"; // production mode
+//var libUrl="/libdbg/"; // development mode
 
 require.config({
 	baseUrl: "/js",
