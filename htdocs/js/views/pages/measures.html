@@ -55,6 +55,10 @@ svg {
 	<div class="well">
 		<div class="row-fluid">
 			<div class="btn-group">
+				<button class="btn btn-danger btnclear">Clear</button>
+			</div>
+
+			<div class="btn-group">
 				<button class="btn dropdown-toggle" data-toggle="dropdown">
 					<span id="sethist-label">History ...</span>
 					<b class="caret"></b>
@@ -75,19 +79,39 @@ svg {
 					<li><a class="sethist" value="43200" href="#">12 h</a></li>
 				</ul>
 			</diV>
+
 			<div class="btn-group">
 				<button class="btn dropdown-toggle" data-toggle="dropdown">
-					<span id="setfreq-label">Frequency ...</span>
+					<span id="setrefresh-label">Refresh ...</span>
 					<b class="caret"></b>
 				</button>
 				<ul class="dropdown-menu">
-					<li class="nav-header">Display frequency</li>
+					<li class="nav-header">Refresh frequency</li>
+					<li><a class="setrefresh" value="0.1" href="#">0.1 Hz</a></li>
+					<li><a class="setrefresh" value="0.2" href="#">0.2 Hz</a></li>
+					<li><a class="setrefresh" value="0.5" href="#">0.5 Hz</a></li>
+					<li class="active"><a class="setrefresh" value="1" href="#">1 Hz</a></li>
+					<li><a class="setrefresh" value="2" href="#">2 Hz</a></li>
+					<li><a class="setrefresh" value="5" href="#">5 Hz</a></li>
+					<li><a class="setrefresh" value="10" href="#">10 Hz</a></li>
+				</ul>
+			</div>
+
+			<div class="btn-group">
+				<button class="btn dropdown-toggle" data-toggle="dropdown">
+					<span id="setfreq-label">Sampling ...</span>
+					<b class="caret"></b>
+				</button>
+				<ul class="dropdown-menu">
+					<li class="nav-header">Sampling frequency</li>
 					<li><a class="setfreq" value="0.1" href="#">0.1 Hz</a></li>
 					<li><a class="setfreq" value="0.2" href="#">0.2 Hz</a></li>
 					<li><a class="setfreq" value="0.5" href="#">0.5 Hz</a></li>
 					<li class="active"><a class="setfreq" value="1" href="#">1 Hz</a></li>
 					<li><a class="setfreq" value="2" href="#">2 Hz</a></li>
 					<li><a class="setfreq" value="5" href="#">5 Hz</a></li>
+					<li><a class="setfreq" value="10" href="#">10 Hz</a></li>
+					<li><a class="setfreq" value="20" href="#">20 Hz</a></li>
 				</ul>
 			</div>
 

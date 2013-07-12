@@ -224,64 +224,65 @@ WWWServer.prototype._init_socket=function(socket) {
    /******************* subscribe/unsubscribe *********/
    var self=this;
 
-   var timer=false;
-   function subscribe(interval) {
-      if (timer) {
+   var sampletimer=false;
+   var refreshtimer=false;
+	var samples=[];
+
+   function subscribe(sampleinterval,refreshinterval) {
+      if (sampletimer) {
          // change timer interval but do not subscribe again
-         clearInterval(timer);
+         clearInterval(sampletimer);
       }
-      else {
-			// TODO: subscribe to samples and then send data
+      if (refreshtimer) {
+         // change timer interval but do not subscribe again
+         clearInterval(refreshtimer);
       }
 
-      timer=setInterval(function() {
-			// get samples
-
-			var now=(+ new Date());
+		sampletimer=setInterval(function() {
 			var current=.3+Math.random()*.7;
 			var voltage=15+Math.random()*10;
+			var m={
+				ts: (+ new Date()),
+				current: current+(Math.random()-0.5)*.50,
+				currentUnit: "A",
+				voltage: voltage+(Math.random()-0.5)*5,
+				voltageUnit: "V",
+				powerUnit:"W"
+			};
+			m.power=m.current*m.voltage;
+			samples.push(m);
+		},sampleinterval);
 
-			var steps=3;
-			var data=[];
-			for (var i=0; i<3; i++) {
-				var m={
-					ts: now+i*(interval/3),
-					current: current+(Math.random()-0.5)*.50,
-					currentUnit: "A",
-					voltage: voltage+(Math.random()-0.5)*5,
-					voltageUnit: "V",
-					powerUnit:"W"
-				};
-				m.power=m.current*m.voltage;
-				data.push(m);
-			}
-
+      refreshtimer=setInterval(function() {
          // samples event is volatile (it can be dropped by client)
-         socket.volatile.emit(EVENTS.SAMPLES,JSON.stringify(data));
-      },interval);
+			if (!samples.length) return;
+         socket.volatile.emit(EVENTS.SAMPLES,JSON.stringify(samples));
+			samples.splice(0);
+      },refreshinterval);
 
       return true;
    }
 
    function unsubscribe() {
-      if (!timer) return false;
-
 		// unsubscribe to samples
-      clearInterval(timer);
-      timer=false;
+		if (sampletimer)
+			clearInterval(sampletimer);
+		if (refreshtimer)
+			clearInterval(refreshtimer);
+      refreshtimer=false;
+      sampletimer=false;
+
       return true;
    }
 
-   var self=this;
-   var timer=false; // not subscribed
-   socket.on(EVENTS.SUBSCRIBE, function(maxfreq) {
+   socket.on(EVENTS.SUBSCRIBE, function(maxfreq, refreshfreq ) {
       maxfreq=(maxfreq>0) ? maxfreq : 1.0;
-      var interval=1000.0/maxfreq;
+      refreshfreq=(refreshfreq>0) ? refreshfreq : 1.0;
 
-      DEBUG && logger.debug("SOCKET: received subscribe (freq:"+maxfreq+")");
+      DEBUG && logger.debug("SOCKET: received subscribe (freq:"+maxfreq+", refresh:"+refreshfreq+")");
 
-      if (subscribe(1000/maxfreq)) {
-         socket.emit(EVENTS.SUBSCRIBED,EVENTS.SAMPLES,maxfreq);
+      if (subscribe(1000/maxfreq,1000/refreshfreq)) {
+         socket.emit(EVENTS.SUBSCRIBED,EVENTS.SAMPLES,maxfreq,refreshfreq);
       }
       else {
          socket.emit(EVENTS.FAILURE,"Already Subscribed");

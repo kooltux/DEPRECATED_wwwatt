@@ -17,6 +17,8 @@ define([
 			this.setHistory(this.history);
 			this.frequency=1; // HZ
 			this.setFrequency(this.frequency);
+			this.refreshrate=1; // HZ
+			this.setRefreshRate(this.refreshrate);
 
 			// init websocket
 			this.pause();
@@ -53,6 +55,11 @@ define([
 		},
 
 		// events
+		'.btnclear click': function() {
+			// clear all data
+			can.trigger(this.srvdata,'clearsamples');
+		},
+
 		'.btnplay click': function() {
 			this.playpauseToggle();
 		},
@@ -67,6 +74,18 @@ define([
 			ctrl.parent().addClass("active");
 
 			this.setHistory(value);
+		},
+
+		'.setrefresh click': function(ctrl, ev) {
+			ev.preventDefault();
+
+			// retrieve value in link
+			var value=ctrl.attr("value");
+
+			ctrl.parent().parent().children().removeClass("active");
+			ctrl.parent().addClass("active");
+
+			this.setRefreshRate(value);
 		},
 
 		'.setfreq click': function(ctrl, ev) {
@@ -87,6 +106,7 @@ define([
 			var ydata1="power";
 			var ydata2="voltage";
 			var ydata3="current";
+			var ydata4="energy";
 			var labels={
 				ts: {
 					name: "Time",
@@ -111,6 +131,12 @@ define([
 					unit: "V", 
 					color: "#00C41D",
 					lightcolor: "#80FF92"
+				},
+				energy: {
+					name: "Energy",
+					unit: "W.h", 
+					color: "#d629Fa",
+					lightcolor: "#e595f5"
 				}
 			};
 
@@ -119,10 +145,10 @@ define([
 
 			// loading page
 			var chartdiv=this.element.find('#chart');
-			var viewport={w: 1000, h: 500};
+			var viewport={w: 1000, h: 600};
 
-			var margin = {top: 10, right: 130, bottom: 100, left: 50},
-				margin2 = {top: 440, right: 10, bottom: 20, left: 50},
+			var margin = {top: 10, right: 100, bottom: 120, left: 50},
+				margin2 = {top: 520, right: 10, bottom: 30, left: 50},
 				width = viewport.w - margin.left - margin.right,
 				height = viewport.h - margin.top - margin.bottom,
 				height2 = viewport.h - margin2.top - margin2.bottom;
@@ -158,12 +184,12 @@ define([
 				.y(function(d) { return y1(d[ydata1]); });
 
 			var line2 = d3.svg.line()
-				.interpolate("monotone")
+				.interpolate("linear")
 				.x(function(d) { return x(d[xdata]); })
 				.y(function(d) { return y2(d[ydata2]); });
 
 			var line3 = d3.svg.line()
-				.interpolate("monotone")
+				.interpolate("linear")
 				.x(function(d) { return x(d[xdata]); })
 				.y(function(d) { return y3(d[ydata3]); });
 
@@ -244,12 +270,17 @@ define([
 
 			var graph=focus.append("g")
 				.on("mousemove",function() {
-					console.log("move ",d3.mouse(this));
-					// TODO: adjust legend
+					var xdom=x.domain();
+					if (!xdom) return;
+
+					// get ts from x domain
+					var coords=d3.mouse(this);
+					var ts=(+xdom[0])+((+xdom[1])-(+xdom[0]))*coords[0]/width;
+
+					update_legend(ts);
 				})
 				.on("mouseout",function() {
-					console.log("out ",d3.mouse(this));
-					// TODO: adjust legend
+					update_legend();
 				})
 			;
 
@@ -323,7 +354,7 @@ define([
 			focus.append("g")
 				.attr("class", "y axis y3")
 				.style("stroke",labels[ydata3].color)
-				.attr("transform", "translate("+(width+margin.right-50)+",0)")
+				.attr("transform", "translate("+(width+margin.right-20)+",0)")
 				.call(yAxis3.tickSubdivide(true))
 				.call(axis_legend(yAxis3,ydata3))
 			;
@@ -337,6 +368,8 @@ define([
 					focus.select(".data-line2").attr("d", line2);
 					focus.select(".data-line3").attr("d", line3);
 					focus.select(".x.axis").call(xAxis);
+
+					update_legend();
 				})
 			;
 
@@ -366,7 +399,8 @@ define([
 			// legend
 			var lcontainer=svg.append("g")
 				.attr("class","legend")
-				.attr("transform",function(d) { return "translate("+(width+margin.left+20)+","+(margin2.top)+")"; });
+				.attr("transform",function(d) { return "translate("+(width+margin.left+15)+","+(margin2.top-5)+")"; });
+			var legend_nan="----.----";
 			(function() {
 				var lrect=lcontainer.append("rect");
 
@@ -377,14 +411,14 @@ define([
 					txt.append("tspan").text((def.name || "unknown")+" : ");
 					txt.append("tspan")
 						.attr("class","data-legend"+(i+1))
-						.text("----.----")
+						.text(legend_nan)
 					;
 					if (def.unit)
 						txt.append("tspan").text(" "+def.unit);
 				}
 
 				var legend=lcontainer.selectAll(".legend")
-					.data([ydata1,ydata2,ydata3])
+					.data([ydata1,ydata2,ydata3,ydata4])
 					.enter()
 						.append("g")
 						.attr("class","legend")
@@ -399,16 +433,108 @@ define([
 				lrect
 					.attr("x",bbox.x-5)
 					.attr("y",bbox.y-5)
-					.attr("width",bbox.width+20)
+					.attr("width",bbox.width+30)
 					.attr("height",bbox.height+10)
 					.style("stroke","steelblue")
 					.style("fill","#eee")
 				;
 			})();
 
+			// get last *displayed* sample (on the right), depends on brush
+			function last_sample(ts) {
+				if (!svgdata.length) return;
+
+				if (!ts) {
+					var xdomain=x.domain();
+					if (xdomain.length) {
+						ts=+xdomain[1];
+					}
+				}
+
+				var last;
+				if (ts) {
+					svgdata.some(function(s) {
+						if (s[xdata]>ts) {
+							last=s;
+							return true;
+						}
+					});
+				}
+				return last;
+			}
+
+			var numformatter=d3.format(".3f");
+			function update_legend(ts) {
+				// update legend
+				var last=last_sample(ts);
+				if (last) {
+					lcontainer.select(".data-legend1").text(numformatter(last[ydata1]));
+					lcontainer.select(".data-legend2").text(numformatter(last[ydata2]));
+					lcontainer.select(".data-legend3").text(numformatter(last[ydata3]));
+					lcontainer.select(".data-legend4").text(numformatter(compute_energy()));
+				}
+				else {
+					lcontainer.select(".data-legend1").text(legend_nan);
+					lcontainer.select(".data-legend2").text(legend_nan);
+					lcontainer.select(".data-legend3").text(legend_nan);
+					lcontainer.select(".data-legend4").text(legend_nan);
+				}
+			}
+
+			function compute_energy() {
+				if (!svgdata.length) return legend_nan;
+
+				// get x domain
+				var xdomain=x.domain();
+				if (!xdomain) return legend_nan;
+
+				// transform to ts
+				var ts0=+xdomain[0];
+				var ts1=+xdomain[1];
+
+				// compute area
+				var surface=0.0;
+				var prev;
+				var first=true;
+				var last=false;
+
+				svgdata.some(function(s) {
+					// skip the points before ts0 (but keep previous)
+					if (s[xdata]<ts0) {
+						prev=s;
+						return false;
+					}
+					var t0=prev ? prev[xdata] : ts0;
+					var t1=s[xdata];
+
+					// limit time on first sample
+					if (first) {
+						first=false;
+						t0=ts0;
+					}
+
+					// skip the points after ts1 (and exit ASAP)
+					if (s[xdata]>ts1) {
+						t1=ts1;
+						last=true;
+					}
+
+					// add surface between t0 and t1
+					surface+=(t1-t0)*s[ydata1];
+					prev=s;
+
+					return last;
+				});
+
+				// convert to W.h
+				surface/=1000; // w.s
+				surface/=3600; // W.h
+
+				return surface;
+			}
+
 			var self=this;
 			svgdata.interrupted=false;
-			var numformatter=d3.format(".5g");
 			can.bind.call(this.srvdata,'newsamples',function(ev) {
 				// insert new elements
 				self.srvdata.forEach(function(d) {
@@ -448,9 +574,6 @@ define([
 						svgdata.shift();
 				}
 
-				if (!svgdata.length)
-					return;
-
 				xs.domain(d3.extent(svgdata.map(function(d) { return d[xdata]; })));
 				x.domain(brush.empty() ? xs.domain() : brush.extent());
 				y1.domain([0, d3.max(svgdata.map(function(d) { return d[ydata1]; }))]);
@@ -470,19 +593,12 @@ define([
 				context.select("path").attr("d", sarea);
 				context.select(".x.axis").call(xsAxis);
 
-				// update legend
-				if (svgdata.length) {
-					var last=_.last(svgdata);
-					lcontainer.select(".data-legend1").text(numformatter(last[ydata1]));
-					lcontainer.select(".data-legend2").text(numformatter(last[ydata2]));
-					lcontainer.select(".data-legend3").text(numformatter(last[ydata3]));
-				}
-				else {
-					lcontainer.select(".data-legend1").text("----.----");
-					lcontainer.select(".data-legend2").text("----.----");
-					lcontainer.select(".data-legend3").text("----.----");
-				}
+				update_legend();
+			});
 
+			can.bind.call(this.srvdata,'clearsamples',function(ev) {
+				svgdata.splice(0);
+				can.trigger(self.srvdata,'newsamples');
 			});
 		},
 
@@ -522,7 +638,17 @@ define([
 		setFrequency: function(freq) {
 			DEBUG && console.log("New frequency: "+freq);
 			this.frequency=freq;
-			this.element.find('#setfreq-label').text("Frequency: "+freq+"Hz");
+			this.element.find('#setfreq-label').text("Sampling: "+freq+"Hz");
+
+			// resubscribe
+			if (this.iosubscribed)
+				this.subscribe();
+		},
+
+		setRefreshRate: function(freq) {
+			DEBUG && console.log("New refresh rate: "+freq);
+			this.refreshrate=freq;
+			this.element.find('#setrefresh-label').text("Refresh: "+freq+"Hz");
 
 			// resubscribe
 			if (this.iosubscribed)
@@ -682,7 +808,7 @@ define([
 			DEBUG && console.log("SOCKIO - Subscribing...");
 			this._update_playpause(true);
 			if (this.iosocket)
-				this.iosocket.emit('subscribe', this.frequency /*Hz*/);
+				this.iosocket.emit('subscribe', this.frequency /*Hz*/, this.refreshrate /*Hz*/);
 		},
 
 		unsubscribe: function() {
