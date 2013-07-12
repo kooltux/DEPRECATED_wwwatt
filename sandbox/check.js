@@ -13,7 +13,7 @@ logger.add(logger.transports.Console,{
 
 var w=new WattMeter("any");
 
-w.setSamplingFrequency(1);
+w.setSamplingFrequency(4);
 
 w.on("connect",function() { logger.info("CONNECT"); });
 w.on("disconnect",function() { logger.info("DISCONNECT"); });

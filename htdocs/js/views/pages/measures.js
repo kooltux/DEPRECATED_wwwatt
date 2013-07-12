@@ -13,9 +13,9 @@ define([
 			this.srvdata=[];
 
 			// init params (history, frequency)
-			this.history=3600; // seconds
+			this.history=600; // seconds
 			this.setHistory(this.history);
-			this.frequency=1; // HZ
+			this.frequency=2; // HZ
 			this.setFrequency(this.frequency);
 			this.refreshrate=1; // HZ
 			this.setRefreshRate(this.refreshrate);
@@ -368,8 +368,6 @@ define([
 					focus.select(".data-line2").attr("d", line2);
 					focus.select(".data-line3").attr("d", line3);
 					focus.select(".x.axis").call(xAxis);
-
-					update_legend();
 				})
 			;
 
@@ -466,19 +464,20 @@ define([
 			var numformatter=d3.format(".3f");
 			function update_legend(ts) {
 				// update legend
-				var last=last_sample(ts);
-				if (last) {
-					lcontainer.select(".data-legend1").text(numformatter(last[ydata1]));
-					lcontainer.select(".data-legend2").text(numformatter(last[ydata2]));
-					lcontainer.select(".data-legend3").text(numformatter(last[ydata3]));
-					lcontainer.select(".data-legend4").text(numformatter(compute_energy()));
+				if (ts) {
+					var last=last_sample(ts);
+					if (last) {
+						lcontainer.select(".data-legend1").text(numformatter(last[ydata1]));
+						lcontainer.select(".data-legend2").text(numformatter(last[ydata2]));
+						lcontainer.select(".data-legend3").text(numformatter(last[ydata3]));
+						lcontainer.select(".data-legend4").text(numformatter(compute_energy()));
+						return;
+					}
 				}
-				else {
-					lcontainer.select(".data-legend1").text(legend_nan);
-					lcontainer.select(".data-legend2").text(legend_nan);
-					lcontainer.select(".data-legend3").text(legend_nan);
-					lcontainer.select(".data-legend4").text(legend_nan);
-				}
+				lcontainer.select(".data-legend1").text(legend_nan);
+				lcontainer.select(".data-legend2").text(legend_nan);
+				lcontainer.select(".data-legend3").text(legend_nan);
+				lcontainer.select(".data-legend4").text(legend_nan);
 			}
 
 			function compute_energy() {
@@ -592,8 +591,6 @@ define([
 
 				context.select("path").attr("d", sarea);
 				context.select(".x.axis").call(xsAxis);
-
-				update_legend();
 			});
 
 			can.bind.call(this.srvdata,'clearsamples',function(ev) {
