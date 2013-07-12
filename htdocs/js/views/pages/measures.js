@@ -122,7 +122,7 @@ define([
 				},
 				current: {
 					name: "Current",
-					unit: "A",
+					unit: "mA",
 					color: "#d6293a",
 					lightcolor: "#FF98A0"
 				},

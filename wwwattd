@@ -24,6 +24,7 @@ var util=require('util');
 var logger=require('winston');
 var path=require("path");
 var fs=require("fs");
+var WattMeter=require("./yoctowatt.js");
 
 var express = require('express');
 var http = require('http');
@@ -38,7 +39,7 @@ var WWWServer=function(opts) {
 		confdir: 'etc',
 		htdocs: 'htdocs',
 		timeout: 5000,
-		title: "WWWATT  Server"
+		title: "WWWATT Server"
 	},opts || {});
 
 	// resolve confdir and htdocs dir
@@ -47,6 +48,11 @@ var WWWServer=function(opts) {
 
 	DEBUG && logger.debug("Creating www server with config: "+util.inspect(cfg));
 	_.extend(this,cfg);
+
+	this.wmeter=new WattMeter("any");
+	this.wmeter.on("connect",function() { logger.info("WattMeter connected: ",this.device); });
+	this.wmeter.on("disconnect",function() { logger.info("WattMeter disconnected"); });
+
 }
 
 WWWServer.prototype.listen=function(cb) {
@@ -224,53 +230,40 @@ WWWServer.prototype._init_socket=function(socket) {
    /******************* subscribe/unsubscribe *********/
    var self=this;
 
-   var sampletimer=false;
    var refreshtimer=false;
 	var samples=[];
 
-   function subscribe(sampleinterval,refreshinterval) {
-      if (sampletimer) {
-         // change timer interval but do not subscribe again
-         clearInterval(sampletimer);
-      }
+	function newSampleFromWattMeter(s) {
+		if (refreshtimer)
+			samples.push(s);
+	}
+
+   function subscribe(samplefreq,refreshfreq) {
+	  self.wmeter.setSamplingFrequency(samplefreq);
+	  self.wmeter.addListener('sample',newSampleFromWattMeter);
+
       if (refreshtimer) {
          // change timer interval but do not subscribe again
          clearInterval(refreshtimer);
       }
-
-		sampletimer=setInterval(function() {
-			var current=.3+Math.random()*.7;
-			var voltage=15+Math.random()*10;
-			var m={
-				ts: (+ new Date()),
-				current: current+(Math.random()-0.5)*.50,
-				currentUnit: "A",
-				voltage: voltage+(Math.random()-0.5)*5,
-				voltageUnit: "V",
-				powerUnit:"W"
-			};
-			m.power=m.current*m.voltage;
-			samples.push(m);
-		},sampleinterval);
 
       refreshtimer=setInterval(function() {
          // samples event is volatile (it can be dropped by client)
 			if (!samples.length) return;
          socket.volatile.emit(EVENTS.SAMPLES,JSON.stringify(samples));
 			samples.splice(0);
-      },refreshinterval);
+      },1000/refreshfreq);
 
       return true;
    }
 
    function unsubscribe() {
 		// unsubscribe to samples
-		if (sampletimer)
-			clearInterval(sampletimer);
+		self.wmeter.removeListener('sample',newSampleFromWattMeter);
+
 		if (refreshtimer)
 			clearInterval(refreshtimer);
       refreshtimer=false;
-      sampletimer=false;
 
       return true;
    }
@@ -281,7 +274,7 @@ WWWServer.prototype._init_socket=function(socket) {
 
       DEBUG && logger.debug("SOCKET: received subscribe (freq:"+maxfreq+", refresh:"+refreshfreq+")");
 
-      if (subscribe(1000/maxfreq,1000/refreshfreq)) {
+      if (subscribe(maxfreq,refreshfreq)) {
          socket.emit(EVENTS.SUBSCRIBED,EVENTS.SAMPLES,maxfreq,refreshfreq);
       }
       else {
