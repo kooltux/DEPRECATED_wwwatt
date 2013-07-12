@@ -454,7 +454,7 @@ define([
 				var last;
 				if (ts) {
 					svgdata.some(function(s) {
-						if (s[xdata]>ts) {
+						if (s[xdata]>=ts) {
 							last=s;
 							return true;
 						}
